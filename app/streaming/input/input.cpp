@@ -23,6 +23,7 @@ SdlInputHandler::SdlInputHandler(StreamingPreferences& prefs, int streamWidth, i
       m_FakeCaptureActive(false),
       m_CaptureSystemKeysMode(prefs.captureSysKeysMode),
       m_MouseCursorCapturedVisibilityState(SDL_DISABLE),
+      m_IgnoreHotkeyModsHeld(false),
       m_LongPressTimer(0),
       m_StreamWidth(streamWidth),
       m_StreamHeight(streamHeight),
@@ -240,6 +241,14 @@ void SdlInputHandler::raiseAllKeys()
     // the set so future key up events aren't incorrectly suppressed.
     m_IgnoredScancodesDown.clear();
 
+    // Likewise, we may never see the release of the Ignore Hotkey's
+    // modifiers, so restore the keyboard grab now rather than leaving it
+    // suspended indefinitely.
+    if (m_IgnoreHotkeyModsHeld) {
+        m_IgnoreHotkeyModsHeld = false;
+        updateKeyboardGrabState();
+    }
+
     if (m_KeysDown.isEmpty()) {
         return;
     }
@@ -311,6 +320,15 @@ void SdlInputHandler::updateKeyboardGrabState()
     if (m_CaptureSystemKeysMode == StreamingPreferences::CSK_FULLSCREEN &&
             !(windowFlags & SDL_WINDOW_FULLSCREEN)) {
         // Ungrab if it's fullscreen only and we left fullscreen
+        shouldGrab = false;
+    }
+
+    if (m_IgnoreHotkeyModsHeld) {
+        // The user is holding the exact modifiers of their configured
+        // Ignore Hotkey combo. Release the grab so the OS (and other
+        // local client-side software such as AutoHotkey) can see the
+        // completing key press instead of it being captured system-wide
+        // by our keyboard grab before it can reach anything else.
         shouldGrab = false;
     }
 

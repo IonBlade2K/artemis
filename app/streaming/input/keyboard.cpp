@@ -188,6 +188,22 @@ void SdlInputHandler::handleKeyEvent(SDL_KeyboardEvent* event)
         return;
     }
 
+    // Track whether the exact modifiers of the configured Ignore Hotkey
+    // are currently held, so we can suspend the system keyboard grab for
+    // the duration (see updateKeyboardGrabState()). This must be kept up
+    // to date on every modifier press/release, not just when the hotkey's
+    // final key is pressed, so the grab is already released by the time
+    // that key reaches the OS.
+    const auto& ignoreCombo = m_SpecialKeyCombos[KeyComboIgnore];
+    if (ignoreCombo.enabled) {
+        int currentMods = HotkeyManager::sdlModStateToHotkeyModMask(SDL_GetModState());
+        bool modsHeld = currentMods != 0 && currentMods == ignoreCombo.modMask;
+        if (modsHeld != m_IgnoreHotkeyModsHeld) {
+            m_IgnoreHotkeyModsHeld = modsHeld;
+            updateKeyboardGrabState();
+        }
+    }
+
     // If this key's press was suppressed by the ignore hotkey, suppress
     // its release too so the host never sees the key at all.
     if (event->state == SDL_RELEASED &&
@@ -199,26 +215,13 @@ void SdlInputHandler::handleKeyEvent(SDL_KeyboardEvent* event)
     if (event->state == SDL_PRESSED) {
         // Compute the currently active modifier set. Left/right variants
         // are collapsed together and lock states (Num/Caps) are excluded.
-        int activeMods = 0;
-        if (event->keysym.mod & KMOD_CTRL) {
-            activeMods |= HotkeyManager::HkModCtrl;
-        }
-        if (event->keysym.mod & KMOD_ALT) {
-            activeMods |= HotkeyManager::HkModAlt;
-        }
-        if (event->keysym.mod & KMOD_SHIFT) {
-            activeMods |= HotkeyManager::HkModShift;
-        }
-        if (event->keysym.mod & KMOD_GUI) {
-            activeMods |= HotkeyManager::HkModGui;
-        }
+        int activeMods = HotkeyManager::sdlModStateToHotkeyModMask(event->keysym.mod);
 
         // Valid combos always include at least one modifier, and a combo
         // only matches when exactly its bound modifiers are held.
         if (activeMods != 0) {
             // The ignore hotkey takes precedence over all other combos to
             // guarantee its key is never forwarded to the host.
-            const auto& ignoreCombo = m_SpecialKeyCombos[KeyComboIgnore];
             if (ignoreCombo.enabled && ignoreCombo.modMask == activeMods &&
                     (event->keysym.sym == ignoreCombo.keyCode ||
                      (ignoreCombo.scanCode != SDL_SCANCODE_UNKNOWN &&

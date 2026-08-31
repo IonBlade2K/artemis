@@ -94,6 +94,10 @@ public:
     // Converts a Qt modifier mask to a HotkeyModifier mask
     static int qtModsToHotkeyModMask(int qtModifiers);
 
+    // Converts an SDL_Keymod state (as returned by SDL_GetModState() or
+    // found in an SDL_Keysym) to a HotkeyModifier mask
+    static int sdlModStateToHotkeyModMask(int sdlModState);
+
     // Converts a Qt key code to an SDL keycode (SDLK_UNKNOWN if unmappable).
     // The Qt modifier mask is consulted for Qt::KeypadModifier only.
     static int qtKeyToSdlKeycode(int qtKey, int qtModifiers);

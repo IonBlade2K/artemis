@@ -391,6 +391,24 @@ int HotkeyManager::qtModsToHotkeyModMask(int qtModifiers)
     return mask;
 }
 
+int HotkeyManager::sdlModStateToHotkeyModMask(int sdlModState)
+{
+    int mask = 0;
+    if (sdlModState & KMOD_CTRL) {
+        mask |= HkModCtrl;
+    }
+    if (sdlModState & KMOD_ALT) {
+        mask |= HkModAlt;
+    }
+    if (sdlModState & KMOD_SHIFT) {
+        mask |= HkModShift;
+    }
+    if (sdlModState & KMOD_GUI) {
+        mask |= HkModGui;
+    }
+    return mask;
+}
+
 bool HotkeyManager::getBinding(int action, int& qtModifiers, int& qtKey)
 {
     if (action < 0 || action >= ActionCount) {

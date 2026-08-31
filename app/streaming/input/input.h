@@ -224,6 +224,14 @@ private:
     StreamingPreferences::CaptureSysKeysMode m_CaptureSystemKeysMode;
     int m_MouseCursorCapturedVisibilityState;
 
+    // True while the physical modifier keys currently held down exactly
+    // match the configured "Ignore Hotkey" combo. While true, the system
+    // keyboard grab is suspended (see updateKeyboardGrabState()) so the
+    // completing key press reaches the OS and other local client-side
+    // software (such as AutoHotkey) instead of being swallowed by our
+    // low-level keyboard grab before it can be delivered to anything else.
+    bool m_IgnoreHotkeyModsHeld;
+
     struct {
         KeyCombo keyCombo;
         SDL_Keycode keyCode;
